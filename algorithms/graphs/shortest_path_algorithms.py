@@ -1,48 +1,59 @@
 from collections import defaultdict
 
+class Graph:
+  def __init__(self):
+    self.nodes = set()
+    self.edges = defaultdict(list)
+    self.distances = {}
+
+  def add_node(self, value):
+    self.nodes.add(value)
+
+  def add_edge(self, from_node, to_node, distance):
+    self.edges[from_node].append(to_node)
+    self.edges[to_node].append(from_node)
+    self.distances[(from_node, to_node)] = distance
+
 (n, m) = (int(x) for x in raw_input().split())
 
-graph = defaultdict(lambda: defaultdict(int))
+graph = Graph()
 try: 
     for _ in range(m):
         (n1, n2, w) = raw_input().split()
-        graph[n1][n2] = int(w)
+        graph.add_node(n1)
+        graph.add_node(n2)
+        graph.add_edge(n1, n2, int(w))
+        graph.add_edge(n2, n1, int(w))
 except EOFError:
     pass
     
-    
 
-def initialize(graph, source):
-    d = {} # Stands for destination
-    p = {} # Stands for predecessor
-    for node in graph:
-        d[node] = float('Inf') # We start admiting that the rest of nodes are very very far
-        p[node] = None
-    d[source] = 0 # For the source we know how to reach
-    return d, p
+def dijsktra(graph, initial):
+  visited = {initial: 0}
 
-def relax(node, neighbour, graph, d, p):
-    # If the distance between the node and the neighbour is lower than the one I have now
-    if d[neighbour] > d[node] + graph[node][neighbour]:
-        # Record this lower distance
-        d[neighbour]  = d[node] + graph[node][neighbour]
-        p[neighbour] = node
+  nodes = set(graph.nodes)
 
-def bellman_ford(graph, source):
-    d, p = initialize(graph, source)
-    for i in range(len(graph)-1): #Run this until is converges
-        for u in graph:
-            for v in graph[u]: #For each neighbour of u
-                relax(u, v, graph, d, p) #Lets relax it
+  while nodes: 
+    min_node = None
+    for node in nodes:
+      if node in visited:
+        if min_node is None:
+          min_node = node
+        elif visited[node] < visited[min_node]:
+          min_node = node
 
-    # Step 3: check for negative-weight cycles
-    for u in graph:
-        for v in graph[u]:
-            assert d[v] <= d[u] + graph[u][v]
+    if min_node is None:
+      break
 
-    return d, p
+    nodes.remove(min_node)
+    current_weight = visited[min_node]
 
-(d, p) = bellman_ford(graph, '1')
-print 'd', d 
-print 'p', p
-# print ' '.join([str(v[str(x)]) for x in range(2,n+1)])
+    for edge in graph.edges[min_node]:
+      weight = current_weight + graph.distances[(min_node, edge)]
+      if edge not in visited or weight < visited[edge]:
+        visited[edge] = weight
+
+  return visited
+
+v = dijsktra(graph, '1')
+print ' '.join([str(v[str(x)]) for x in range(2,n+1)])
